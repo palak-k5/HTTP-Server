@@ -1,2 +1,18 @@
+# Node modules
 node_modules/
 
+# Compiled object files
+*.o
+
+# Executables
+*.exe
+
+# VS Code configurations
+.vscode/
+
+# Logs and temporary files
+*.log
+*.tmp
+
+# Build output
+.dist/
