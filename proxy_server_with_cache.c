@@ -112,7 +112,66 @@ void* thread_fn(void* socketNew)
 	}
 	
 	
+	else if(bytes_send_client > 0)
+	{
+		len = strlen(buffer); 
+		//Parsing the request
+		ParsedRequest* request = ParsedRequest_create();
+		
+        //ParsedRequest_parse returns 0 on success and -1 on failure.On success it stores parsed request in
+        // the request
+		if (ParsedRequest_parse(request, buffer, len) < 0) 
+		{
+		   	printf("Parsing failed\n");
+		}
+		else
+		{	
+			bzero(buffer, MAX_BYTES);
+			if(!strcmp(request->method,"GET"))							
+			{
+                
+				if( request->host && request->path && (checkHTTPversion(request->version) == 1) )
+				{
+					bytes_send_client = handle_request(socket, request, tempReq);		// Handle GET request
+					if(bytes_send_client == -1)
+					{	
+						sendErrorMessage(socket, 500);
+					}
+
+				}
+				else
+					sendErrorMessage(socket, 500);			// 500 Internal Error
+
+			}  
+            else
+            {
+                printf("This code doesn't support any method other than GET\n");
+            }
+    
+		}
+        //freeing up the request pointer
+		ParsedRequest_destroy(request);
+
+	}
+
+	else if( bytes_send_client < 0)
+	{
+		perror("Error in receiving from client.\n");
+	}
+	else if(bytes_send_client == 0)
+	{
+		printf("Client disconnected!\n");
+	}
+
+	shutdown(socket, SHUT_RDWR);
+	close(socket);
+	free(buffer);
+	sem_post(&seamaphore);	
 	
+	sem_getvalue(&seamaphore,&p);
+	printf("Semaphore post value:%d\n",p);
+	free(tempReq);
+	return NULL;
 }
 
 
