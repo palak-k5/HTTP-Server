@@ -76,6 +76,8 @@ int main(int argc,char * argv[])
     int reuse=1;
     if (setsockopt(proxy_socketId, SOL_SOCKET, SO_REUSEADDR, (const char*)&reuse, sizeof(reuse)) < 0) 
         perror("setsockopt(SO_REUSEADDR) failed\n");
-bzero((char*)&server_addr, sizeof(server_addr));
+    
+    bzero((char*)&server_addr, sizeof(server_addr));
 	server_addr.sin_family = AF_INET;
 	server_addr.sin_port = htons(port_num); }
+    server_addr.sin_addr.s_addr= INADDR_ANY;
