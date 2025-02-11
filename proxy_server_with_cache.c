@@ -46,6 +46,9 @@ pthread_mutex_t lock;
 cache_element* head;                
 int cache_size;             
 
+
+
+
 int main(int argc,char * argv[])
 {
     int client_socket_Id,client_len;
@@ -79,5 +82,62 @@ int main(int argc,char * argv[])
     
     bzero((char*)&server_addr, sizeof(server_addr));
 	server_addr.sin_family = AF_INET;
-	server_addr.sin_port = htons(port_num); }
-    server_addr.sin_addr.s_addr= INADDR_ANY;
+    server_addr.sin_port = htons(port_number); // Assigning port to the Proxy
+	server_addr.sin_addr.s_addr = INADDR_ANY; // Any available adress assigned
+
+
+    
+    // Binding the socket
+	if( bind(proxy_socketId, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0 )
+	{
+		perror("Port is not free\n");
+		exit(1);
+	}
+	printf("Binding on port: %d\n",port_number);
+
+    // Proxy socket listening to the requests
+	int listen_status = listen(proxy_socketId, MAX_CLIENTS);
+
+    if(listen_status < 0 )
+	{
+		perror("Error while Listening !\n");
+		exit(1);
+	}
+
+	int i = 0; // Iterator for thread_id (tid) and Accepted Client_Socket for each thread
+	int Connected_socketId[MAX_CLIENTS];   // This array stores socket descriptors of connected clients
+    // Infinite Loop for accepting connections
+	while(1)
+	{
+		
+		bzero((char*)&client_addr, sizeof(client_addr));			// Clears struct client_addr
+		client_len = sizeof(client_addr); 
+
+        // Accepting the connections
+		client_socketId = accept(proxy_socketId, (struct sockaddr*)&client_addr,(socklen_t*)&client_len);	// Accepts connection
+        if(client_socket_Id<0)
+        {
+            
+			fprintf(stderr, "Error in Accepting connection !\n");
+			exit(1);
+        }
+        else{
+            Connected_socketId[i]=client_socket_Id;// Storing accepted client into array
+        }
+        // Getting IP address and port number of  (ye sab addresses print karne ke liye kiya hai )
+        struct sockaddr_in* client_pt = (struct sockaddr_in*)&client_addr; //typecasting client addreass to socket address
+        
+        struct in_addr ip_addr = client_pt->sin_addr;
+        char str[INET_ADDRSTRLEN];										// INET_ADDRSTRLEN: Default ip address size
+		
+        inet_ntop( AF_INET, &ip_addr, str, INET_ADDRSTRLEN );
+		printf("Client is connected with port number: %d and ip address: %s \n",ntohs(client_addr.sin_port), str);
+		//printf("Socket values of index %d in main function is %d\n",i, client_socketId);
+		
+        pthread_create(&tid[i],NULL,thread_fn, (void*)&Connected_socketId[i]); // Creating a thread for each client accepted
+		i++; 
+	}
+	close(proxy_socketId);									// Close socket
+ 	return 0;
+
+    }
