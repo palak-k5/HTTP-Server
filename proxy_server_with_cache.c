@@ -119,6 +119,8 @@ int handle_request(int clientSocket, ParsedRequest *request, char *tempReq)
 		server_port = atoi(request->port);
 
 	int remoteSocketID = connectRemoteServer(request->host, server_port);
+    if(remoteSocketID < 0)
+		return -1;
 
 	
 }
