@@ -498,6 +498,47 @@ int main(int argc,char * argv[])
 		return site;
 	}
 
+	void remove_cache_element(){
+		// If cache is not empty searches for the node which has the least lru_time_track and deletes it
+		
+		cache_element * p ;  	// Cache_element Pointer (Prev. Pointer)
+		cache_element * q ;		// Cache_element Pointer (Next Pointer)
+		cache_element * temp;	// Cache element to remove
+		//sem_wait(&cache_lock);
+
+		int temp_lock_val = pthread_mutex_lock(&lock);
+		printf("Remove Cache Lock Acquired %d\n",temp_lock_val);
+
+		if( head != NULL) { // Cache != empty
+			for (q = head, p = head, temp =head ; q -> next != NULL; 
+				q = q -> next) { // Iterate through entire cache and search for oldest time track
+
+				if(( (q -> next) -> lru_time_track) < (temp -> lru_time_track)) {
+					temp = q -> next;
+					p = q;
+				}
+			}
+			if(temp == head) { 
+				head = head -> next; /*Handle the base case*/
+			}
+			 else {
+				p->next = temp->next;	
+			}
+
+			cache_size = cache_size - (temp -> len) - sizeof(cache_element) - 
+			strlen(temp -> url) - 1;     //updating the cache size
+			free(temp->data);     		
+			free(temp->url); // Free the removed element 
+			free(temp);
+		} 
+
+		//sem_post(&cache_lock);
+		temp_lock_val = pthread_mutex_unlock(&lock);
+		printf("Remove Cache Lock Unlocked %d\n",temp_lock_val);
+
+	}
+	
+
 	int add_cache_element(char* data,int size,char* url){
 		// Adds element to the cache
 		// sem_wait(&cache_lock);
@@ -542,7 +583,7 @@ int main(int argc,char * argv[])
 			head=element;
 			cache_size+=element_size;
 			temp_lock_val = pthread_mutex_unlock(&lock);
-			
+
 			printf("Add Cache Lock Unlocked %d\n", temp_lock_val);
 			//sem_post(&cache_lock);
 			// free(data);
